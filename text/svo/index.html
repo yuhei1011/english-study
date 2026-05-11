@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVO Power Challenge! - Left Aligned</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --bg: #f8f9fa;
+        }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .quiz-container { max-width: 850px; width: 100%; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-top: 0; }
+        .instruction { font-size: 0.95em; color: #7f8c8d; margin-bottom: 25px; text-align: center; line-height: 1.6; }
+        
+        .question-card { border-bottom: 2px dashed #eee; padding: 25px 0; margin-bottom: 10px; }
+        .level-label { font-size: 0.75em; background: #e0e0e0; padding: 3px 10px; border-radius: 12px; color: #555; font-weight: bold; }
+        
+        /* --- 配置エリアの修正 --- */
+        .drop-container { position: relative; margin: 15px 0; }
+        .drop-area { 
+            min-height: 80px; 
+            border: 2px solid #ddd; 
+            border-radius: 12px; 
+            padding: 10px 50px 10px 20px; /* 右側にピリオド用のスペースを確保 */
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 12px; 
+            background: #fafafa;
+            transition: 0.3s;
+            justify-content: flex-start; /* ★左寄せに変更 */
+            align-items: center;        /* ★縦軸中央寄せ */
+        }
+        
+        .period-mark { 
+            position: absolute; 
+            right: 20px; 
+            top: 50%; 
+            transform: translateY(-50%); /* ★縦軸中央に固定 */
+            font-size: 30px; 
+            font-weight: bold; 
+            color: #333; 
+        }
+
+        .correct-bg { background: #e8f8f5; border-color: var(--success); }
+        .error-bg { background: #fdedec; border-color: var(--error); }
+
+        .pool-area { 
+            min-height: 70px; 
+            padding: 15px; 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 12px; 
+            background: #fff; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            margin-top: 10px; 
+            justify-content: flex-start; /* ★左寄せに変更 */
+            align-items: center;        /* ★縦軸中央寄せ */
+        }
+
+        .chunk-tile { 
+            background: white; 
+            border: 2px solid #3498db; 
+            padding: 12px 25px; 
+            border-radius: 35px; 
+            cursor: pointer; 
+            user-select: none; 
+            transition: 0.2s; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.08); 
+            font-weight: 600; 
+            color: #2c3e50;
+            text-align: center;
+            min-width: 80px;
+            display: flex;       /* ★タイル内の文字も中央寄せ */
+            align-items: center;  /* ★タイル内の文字も中央寄せ */
+            justify-content: center;
+            height: fit-content; 
+        }
+        .chunk-tile:hover { background: #3498db; color: white; transform: translateY(-2px); }
+
+        /* --- コントロールエリア --- */
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 20px; }
+        .button-group { display: flex; gap: 20px; justify-content: center; }
+        .btn { padding: 12px 35px; border: none; border-radius: 50px; cursor: pointer; font-weight: 900; font-size: 1.1em; transition: 0.2s; box-shadow: 0 4px 0px rgba(0,0,0,0.1); letter-spacing: 1px; }
+        .btn-check { background: var(--primary); color: white; }
+        .btn-check:hover { background: #2980b9; transform: translateY(-2px); box-shadow: 0 6px 0px rgba(0,0,0,0.1); }
+        .btn-reset { background: #bdc3c7; color: white; }
+        .result-msg { font-weight: 900; font-size: 1.3em; height: 1.5em; text-align: center; }
+        .power-text { color: #f39c12; font-style: italic; animation: bounce 0.5s infinite alternate; display: inline-block; }
+        @keyframes bounce { from { transform: scale(1) rotate(-5deg); } to { transform: scale(1.3) rotate(5deg); } }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>SVO Power Challenge! 💪</h1>
+    <div class="instruction">
+        正解して「パワー！」を響かせろ！<br>
+        左から順に正しい順序でタイルを並べて [CHECK] を押そう。
+    </div>
+    <div id="quiz-list"></div>
+</div>
+
+<script>
+    const correctSound = new Audio('nakayama-kinnikun-power.mp3');
+    const errorSound = new Audio('nakayama-kinnikun-dotti.mp3');
+    
+    // クイズデータ（名詞セットなどを Yuhei 先生の指示通りに反映）
+    const quizData = [
+        { tiles: ["I", "like", "apples"], lv: "Basic" },
+        { tiles: ["She", "plays", "the piano"], lv: "Basic" },
+        { tiles: ["The cat", "caught", "a small mouse"], lv: "Basic" },
+        { tiles: ["The scientist", "discovered", "a new species"], lv: "Intermediate" },
+        { tiles: ["The professor", "emphasized", "critical thinking"], lv: "Advanced" },
+        { tiles: ["The government", "implemented", "a strict policy"], lv: "Pre-1" },
+        { tiles: ["The findings", "will mitigate", "the risks"], lv: "Pre-1" },
+        { tiles: ["The committee", "approved", "a comprehensive strategy"], lv: "Pre-1 / Level 1" }
+    ];
+
+    function shuffle(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    const quizList = document.getElementById('quiz-list');
+
+    quizData.forEach((data, i) => {
+        const shuffledTiles = shuffle(data.tiles);
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.innerHTML = `
+            <div><span class="level-label">${data.lv}</span> <strong>Question ${i+1}</strong></div>
+            <div class="drop-container">
+                <div class="drop-area" id="drop-${i}"></div>
+                <span class="period-mark">.</span>
+            </div>
+            <div class="pool-area" id="pool-${i}"></div>
+            <div class="controls">
+                <div id="msg-${i}" class="result-msg"></div>
+                <div class="button-group">
+                    <button class="btn btn-reset" onclick="reset(${i})">RESET</button>
+                    <button class="btn btn-check" onclick="check(${i})">CHECK</button>
+                </div>
+            </div>
+        `;
+        quizList.appendChild(card);
+
+        const pool = document.getElementById(`pool-${i}`);
+        shuffledTiles.forEach(text => {
+            const tile = document.createElement('div');
+            tile.className = 'chunk-tile';
+            tile.textContent = text;
+            tile.onclick = () => moveTile(tile, i);
+            pool.appendChild(tile);
+        });
+    });
+
+    function moveTile(tile, qIdx) {
+        const drop = document.getElementById(`drop-${qIdx}`);
+        const pool = document.getElementById(`pool-${qIdx}`);
+        const msg = document.getElementById(`msg-${qIdx}`);
+        if (tile.parentElement === pool) drop.appendChild(tile);
+        else pool.appendChild(tile);
+        msg.textContent = "";
+        drop.className = "drop-area";
+    }
+
+    function check(idx) {
+        const drop = document.getElementById(`drop-${idx}`);
+        const msg = document.getElementById(`msg-${idx}`);
+        const userAns = Array.from(drop.children).map(t => t.textContent).join(' ');
+        const correctAns = quizData[idx].tiles.join(' ');
+        
+        if (userAns === correctAns) {
+            correctSound.currentTime = 0;
+            correctSound.play().catch(e => console.log("Play failed", e));
+            msg.innerHTML = '<span class="power-text">POWER!!</span>';
+            drop.className = "drop-area correct-bg";
+        } else {
+            // 不正解時は4秒目から再生
+            errorSound.currentTime = 4; 
+            errorSound.play().catch(e => console.log("Play failed", e));
+            msg.textContent = "❌ どっちなんだい！？";
+            msg.style.color = "var(--error)";
+            drop.className = "drop-area error-bg";
+        }
+    }
+
+    function reset(idx) {
+        const drop = document.getElementById(`drop-${idx}`);
+        const pool = document.getElementById(`pool-${idx}`);
+        const msg = document.getElementById(`msg-${idx}`);
+        while (drop.firstChild) pool.appendChild(drop.firstChild);
+        msg.textContent = "";
+        drop.className = "drop-area";
+    }
+</script>
+
+</body>
+</html>
