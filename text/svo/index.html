@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVO Power Challenge! - Multi-Answer Mode</title>
+    <title>SVO Power Challenge! - JH1 Safe Edition</title>
     <style>
         :root {
             --primary: #3498db;
@@ -18,6 +18,7 @@
         
         .question-card { border-bottom: 2px dashed #eee; padding: 20px 0; margin-bottom: 10px; }
         .level-label { font-size: 0.7em; background: #e0e0e0; padding: 2px 8px; border-radius: 10px; color: #555; font-weight: bold; }
+        .translation { font-size: 0.85em; color: #34495e; margin: 5px 0; font-weight: bold; display: block; }
         
         .drop-container { position: relative; margin: 10px 0; }
         .drop-area { 
@@ -30,11 +31,19 @@
             gap: 10px; 
             background: #fafafa;
             transition: 0.3s;
-            justify-content: flex-start;
-            align-items: center;
+            justify-content: flex-start; 
+            align-items: center;        
         }
         
-        .period-mark { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 30px; font-weight: bold; color: #333; }
+        .period-mark { 
+            position: absolute; 
+            right: 20px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            font-size: 30px; 
+            font-weight: bold; 
+            color: #333; 
+        }
 
         .correct-bg { background: #e8f8f5; border-color: var(--success); }
         .error-bg { background: #fdedec; border-color: var(--error); }
@@ -49,8 +58,8 @@
             border: 1px solid #eee; 
             border-radius: 10px; 
             margin-top: 10px; 
-            justify-content: flex-start;
-            align-items: center;
+            justify-content: flex-start; 
+            align-items: center;        
         }
 
         .chunk-tile { 
@@ -65,17 +74,34 @@
             font-weight: 600; 
             color: #2c3e50;
             text-align: center;
-            white-space: nowrap;
+            white-space: nowrap; 
             display: flex;
             align-items: center;
             justify-content: center;
             height: fit-content;
+            font-size: 1em;
         }
         .chunk-tile:hover { background: #3498db; color: white; transform: translateY(-2px); }
 
+        @media (max-width: 600px) {
+            .chunk-tile { padding: 8px 14px; font-size: 0.85em; }
+            .drop-area { min-height: 70px; padding-right: 40px; }
+            .btn { padding: 10px 25px; font-size: 0.9em; }
+        }
+
         .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 20px; }
         .button-group { display: flex; gap: 20px; justify-content: center; }
-        .btn { padding: 12px 35px; border: none; border-radius: 50px; cursor: pointer; font-weight: 900; font-size: 1.1em; transition: 0.2s; box-shadow: 0 4px 0px rgba(0,0,0,0.1); letter-spacing: 1px; }
+        .btn { 
+            padding: 12px 35px; 
+            border: none; 
+            border-radius: 50px; 
+            cursor: pointer; 
+            font-weight: 900; 
+            font-size: 1.1em; 
+            transition: 0.2s; 
+            box-shadow: 0 4px 0px rgba(0,0,0,0.1); 
+            letter-spacing: 1px; 
+        }
         .btn-check { background: var(--primary); color: white; }
         .btn-reset { background: #bdc3c7; color: white; }
         .result-msg { font-weight: 900; font-size: 1.3em; height: 1.5em; text-align: center; }
@@ -86,10 +112,10 @@
 <body>
 
 <div class="quiz-container">
-    <h1>SVO Power Challenge! 💪</h1>
+    <h1>SVO Power! 💪</h1>
     <div class="instruction">
-        正しい順序でタイルを並べて [CHECK]！<br>
-        副詞の位置は複数正解がある場合もあるぞ！
+        タイルを並べて [CHECK] を押そう！<br>
+        中1レベルの語順トレーニングだ！
     </div>
     <div id="quiz-list"></div>
 </div>
@@ -98,68 +124,18 @@
     const correctSound = new Audio('nakayama-kinnikun-power.mp3');
     const errorSound = new Audio('nakayama-kinnikun-dotti.mp3');
     
-    // クイズデータ：複数の正解（validAnswers）を保持できるように変更
+    // 中1レベル用に構成したデータ（10番を前置詞句に変更）
     const quizData = [
-        { 
-            tiles: ["I", "eat", "lunch"], 
-            validAnswers: ["I eat lunch"],
-            lv: "Simple" 
-        },
-        { 
-            tiles: ["She", "drinks", "milk"], 
-            validAnswers: ["She drinks milk"],
-            lv: "Simple" 
-        },
-        { 
-            tiles: ["The cat", "caught", "a small mouse"], 
-            validAnswers: ["The cat caught a small mouse"],
-            lv: "Simple" 
-        },
-        { 
-            tiles: ["They", "study", "English", "every day"], 
-            validAnswers: ["They study English every day", "Every day they study English"],
-            lv: "Adverb" 
-        },
-        { 
-            tiles: ["He", "plays", "tennis", "very well"], 
-            validAnswers: ["He plays tennis very well"],
-            lv: "Adverb" 
-        },
-        { 
-            tiles: ["The teacher", "explains", "the rules", "clearly", "in the classroom"], 
-            validAnswers: [
-                "The teacher explains the rules clearly in the classroom",
-                "The teacher clearly explains the rules in the classroom"
-            ],
-            lv: "Adverb+" 
-        },
-        { 
-            tiles: ["Students", "improve", "their skills", "constantly", "through practice"], 
-            validAnswers: [
-                "Students improve their skills constantly through practice",
-                "Students constantly improve their skills through practice"
-            ],
-            lv: "Adverb+" 
-        },
-        { 
-            tiles: ["The company", "reduced", "the plastic waste", "significantly", "in all branches", "last year"], 
-            validAnswers: [
-                "The company reduced the plastic waste significantly in all branches last year",
-                "The company significantly reduced the plastic waste in all branches last year",
-                "Last year the company reduced the plastic waste significantly in all branches"
-            ],
-            lv: "Adverb Storm" 
-        },
-        { 
-            tiles: ["Using digital tools", "provides", "a great opportunity", "for us"], 
-            validAnswers: ["Using digital tools provides a great opportunity for us"],
-            lv: "Complex S" 
-        },
-        { 
-            tiles: ["The government", "implemented", "a new policy", "to support", "many families"], 
-            validAnswers: ["The government implemented a new policy to support many families"],
-            lv: "Complex M" 
-        }
+        { tiles: ["I", "eat", "lunch"], validAnswers: ["I eat lunch"], jp: "私は昼食を食べます。", lv: "Basic" },
+        { tiles: ["She", "drinks", "milk"], validAnswers: ["She drinks milk"], jp: "彼女は牛乳を飲みます。", lv: "Basic" },
+        { tiles: ["The cat", "caught", "a small mouse"], validAnswers: ["The cat caught a small mouse"], jp: "その猫は小さなネズミを捕まえました。", lv: "Basic" },
+        { tiles: ["They", "study", "English", "every day"], validAnswers: ["They study English every day", "Every day they study English"], jp: "彼らは毎日英語を勉強します。", lv: "Adverb" },
+        { tiles: ["He", "plays", "tennis", "very well"], validAnswers: ["He plays tennis very well"], jp: "彼はとても上手にテニスをします。", lv: "Adverb" },
+        { tiles: ["The teacher", "speaks", "English", "slowly", "in the room"], validAnswers: ["The teacher speaks English slowly in the room", "The teacher slowly speaks English in the room"], jp: "先生は教室でゆっくり英語を話します。", lv: "Adverb+" },
+        { tiles: ["Students", "practice", "soccer", "hard", "every day"], validAnswers: ["Students practice soccer hard every day", "Every day students practice soccer hard"], jp: "生徒たちは毎日一生懸命サッカーを練習します。", lv: "Adverb+" },
+        { tiles: ["I", "play", "games", "with my friends", "at home", "on Sundays"], validAnswers: ["I play games with my friends at home on Sundays", "On Sundays I play games with my friends at home"], jp: "私は日曜日に家で友達とゲームをします。", lv: "Adverb Storm" },
+        { tiles: ["My brother", "wants", "a big cake", "for his birthday"], validAnswers: ["My brother wants a big cake for his birthday"], jp: "兄は誕生日に大きなケーキを欲しがっています。", lv: "Challenge" },
+        { tiles: ["We", "use", "the computers", "in the room"], validAnswers: ["We use the computers in the room"], jp: "私たちはその部屋でコンピュータを使います。", lv: "Challenge" }
     ];
 
     function shuffle(array) {
@@ -179,6 +155,7 @@
         card.className = 'question-card';
         card.innerHTML = `
             <div><span class="level-label">${data.lv}</span> <strong>Q${i+1}</strong></div>
+            <span class="translation">${data.jp}</span>
             <div class="drop-container">
                 <div class="drop-area" id="drop-${i}"></div>
                 <span class="period-mark">.</span>
@@ -218,18 +195,16 @@
         const drop = document.getElementById(`drop-${idx}`);
         const msg = document.getElementById(`msg-${idx}`);
         const userAns = Array.from(drop.children).map(t => t.textContent).join(' ');
-        
-        // いずれかの正解パターンに一致するかチェック
         const isCorrect = quizData[idx].validAnswers.includes(userAns);
         
         if (isCorrect) {
             correctSound.currentTime = 0;
-            correctSound.play().catch(e => console.log("Play blocked", e));
+            correctSound.play().catch(e => console.log("Audio play blocked", e));
             msg.innerHTML = '<span class="power-text">POWER!!</span>';
             drop.className = "drop-area correct-bg";
         } else {
-            errorSound.currentTime = 4; 
-            errorSound.play().catch(e => console.log("Play blocked", e));
+            errorSound.currentTime = 4; // どっちなんだい！？ 4秒目
+            errorSound.play().catch(e => console.log("Audio play blocked", e));
             msg.textContent = "❌ どっちなんだい！？";
             msg.style.color = "var(--error)";
             drop.className = "drop-area error-bg";
