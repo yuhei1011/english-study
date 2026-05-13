@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVO Power Challenge! - Slim Edition</title>
+    <title>SVO Power Challenge! - Ultimate Flexibility</title>
     <style>
         :root {
             --primary: #3498db;
@@ -22,41 +22,33 @@
         
         .drop-container { position: relative; margin: 10px 0; }
         .drop-area { 
-            min-height: 70px; border: 2px solid #ddd; border-radius: 12px; padding: 10px 50px 10px 15px; 
+            min-height: 80px; border: 2px solid #ddd; border-radius: 12px; padding: 10px 50px 10px 15px; 
             display: flex; flex-wrap: wrap; gap: 10px; background: #fafafa; transition: 0.3s;
             justify-content: flex-start; align-items: center;        
         }
 
-        /* ★ 文頭自動大文字化（高さ2.2emに連動） ★ */
-        .drop-area .chunk-tile:first-child {
-            display: inline-block; 
-            line-height: 2.2em; /* タイルの高さに合わせる */
-        }
-        .drop-area .chunk-tile:first-child::first-letter {
-            text-transform: uppercase !important;
-        }
+        /* 文頭自動大文字化（Flexbox対応） */
+        .drop-area .chunk-tile:first-child { display: inline-block; line-height: 2.2em; }
+        .drop-area .chunk-tile:first-child::first-letter { text-transform: uppercase !important; }
         
         .period-mark { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 30px; font-weight: bold; color: #333; }
         .correct-bg { background: #e8f8f5; border-color: var(--success); }
         .error-bg { background: #fdedec; border-color: var(--error); }
 
-        .pool-area { min-height: 60px; padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #fff; border: 1px solid #eee; border-radius: 10px; margin-top: 10px; justify-content: flex-start; align-items: center; }
+        .pool-area { min-height: 70px; padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #fff; border: 1px solid #eee; border-radius: 10px; margin-top: 10px; justify-content: flex-start; align-items: center; }
         
-        /* ★ チャンクタイルの高さ設定（文字の高さの約2倍） ★ */
         .chunk-tile { 
             background: white; border: 2px solid #3498db; padding: 0 20px; border-radius: 35px; 
             cursor: pointer; user-select: none; transition: 0.2s; box-shadow: 0 3px 6px rgba(0,0,0,0.08); 
             font-weight: 600; color: #2c3e50; text-align: center; white-space: nowrap; 
-            display: flex; align-items: center; justify-content: center; 
-            height: 2.2em; /* 文字の高さの2倍強 */
-            font-size: 1em;
+            display: flex; align-items: center; justify-content: center; height: 2.2em; font-size: 1em;
         }
         .chunk-tile:hover { background: #3498db; color: white; transform: translateY(-2px); }
 
         @media (max-width: 600px) { 
             .chunk-tile { padding: 0 14px; font-size: 0.85em; height: 2.2em; } 
             .drop-area { min-height: 60px; padding-right: 40px; } 
-            .btn { padding: 10px 25px; font-size: 0.9em; } 
+            .btn { padding: 0 25px; font-size: 0.9em; } 
         }
 
         .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 20px; }
@@ -76,8 +68,8 @@
 <div class="quiz-container">
     <h1>SVO Power! 💪</h1>
     <div class="instruction">
-        タイルを並べて [CHECK] を押そう！<br>
-        11-15問目は準2級〜準1級レベルの挑戦だ！
+        正しい順序で並べて [CHECK]！<br>
+        副詞の位置は複数正解があるぞ。自分なりの「パワー！」を見つけろ！
     </div>
     <div id="quiz-list"></div>
 </div>
@@ -87,29 +79,104 @@
     const errorSound = new Audio('nakayama-kinnikun-dotti.mp3');
     let isPlaying = false;
 
-    // 全15問のデータセット
     const quizData = [
         { tiles: ["I", "eat", "lunch"], validAnswers: ["i eat lunch"], jp: "私は昼食を食べます。", lv: "Basic" },
         { tiles: ["she", "drinks", "milk"], validAnswers: ["she drinks milk"], jp: "彼女は牛乳を飲みます。", lv: "Basic" },
         { tiles: ["the cat", "caught", "a small mouse"], validAnswers: ["the cat caught a small mouse"], jp: "その猫は小さなネズミを捕まえました。", lv: "Basic" },
-        { tiles: ["they", "study", "English", "every day"], validAnswers: ["they study english every day", "every day they study english"], jp: "彼らは毎日英語を勉強します。", lv: "Adverb" },
-        { tiles: ["he", "plays", "tennis", "very well"], validAnswers: ["he plays tennis very well"], jp: "彼はとても上手にテニスをします。", lv: "Adverb" },
-        { tiles: ["the teacher", "speaks", "English", "slowly", "in the room"], validAnswers: ["the teacher speaks english slowly in the room", "the teacher slowly speaks english in the room"], jp: "先生は教室でゆっくり英語を話します。", lv: "Adverb+" },
-        { tiles: ["students", "practice", "soccer", "hard", "every day"], validAnswers: ["students practice soccer hard every day", "every day students practice soccer hard"], jp: "生徒たちは毎日一生懸命サッカーを練習します。", lv: "Adverb+" },
-        { tiles: ["I", "play", "games", "with my friends", "at home", "on Sundays"], validAnswers: ["i play games with my friends at home on sundays", "on sundays i play games with my friends at home"], jp: "私は日曜日に家で友達とゲームをします。", lv: "Adverb Storm" },
-        { tiles: ["my brother", "wants", "a big cake", "for his birthday"], validAnswers: ["my brother wants a big cake for his birthday"], jp: "兄は誕生日に大きなケーキを欲しがっています。", lv: "Challenge" },
-        { tiles: ["we", "use", "the computers", "in the room"], validAnswers: ["we use the computers in the room"], jp: "私たちはその部屋でコンピュータを使います。", lv: "Challenge" },
-        { tiles: ["many people", "protect", "the environment", "around the world"], validAnswers: ["many people protect the environment around the world", "around the world many people protect the environment"], jp: "世界中の多くの人々が環境を保護しています。", lv: "Pre-2+" },
-        { tiles: ["the new library", "provides", "useful books", "for students"], validAnswers: ["the new library provides useful books for students"], jp: "その新しい図書館は生徒たちのために役立つ本を提供しています。", lv: "Pre-2+" },
-        { tiles: ["she", "achieved", "her goal", "with a lot of effort"], validAnswers: ["she achieved her goal with a lot of effort"], jp: "彼女は多大なる努力で目標を達成しました。", lv: "Pre-2+" },
-        { tiles: ["Watching too many videos", "changes", "our way of thinking", "slowly"], validAnswers: ["watching too many videos changes our way of thinking slowly", "watching too many videos slowly changes our way of thinking"], jp: "動画をたくさん見ることは、私たちの考え方をゆっくり変えます。", lv: "Structure+" },
+        { 
+            tiles: ["they", "study", "English", "every day"], 
+            validAnswers: ["they study english every day", "every day they study english"], 
+            jp: "彼らは毎日英語を勉強します。", lv: "Adverb" 
+        },
+        { 
+            tiles: ["he", "plays", "tennis", "very well"], 
+            validAnswers: ["he plays tennis very well"], 
+            jp: "彼はとても上手にテニスをします。", lv: "Adverb" 
+        },
+        { 
+            tiles: ["the teacher", "speaks", "English", "slowly", "in the room"], 
+            validAnswers: [
+                "the teacher speaks english slowly in the room",
+                "the teacher slowly speaks english in the room",
+                "the teacher speaks english in the room slowly"
+            ], 
+            jp: "先生は教室でゆっくり英語を話します。", lv: "Adverb+" 
+        },
+        { 
+            tiles: ["students", "practice", "soccer", "hard", "every day"], 
+            validAnswers: [
+                "students practice soccer hard every day",
+                "every day students practice soccer hard"
+            ], 
+            jp: "生徒たちは毎日一生懸命サッカーを練習します。", lv: "Adverb+" 
+        },
+        { 
+            tiles: ["I", "play", "games", "with my friends", "at home", "on Sundays"], 
+            validAnswers: [
+                "i play games with my friends at home on sundays",
+                "i play games at home with my friends on sundays",
+                "on sundays i play games with my friends at home",
+                "on sundays i play games at home with my friends"
+            ], 
+            jp: "私は日曜日に家で友達とゲームをします。", lv: "Adverb Storm" 
+        },
+        { 
+            tiles: ["my brother", "wants", "a big cake", "for his birthday"], 
+            validAnswers: [
+                "my brother wants a big cake for his birthday",
+                "for his birthday my brother wants a big cake"
+            ], 
+            jp: "兄は誕生日に大きなケーキを欲しがっています。", lv: "Challenge" 
+        },
+        { 
+            tiles: ["we", "use", "the computers", "in the room"], 
+            validAnswers: [
+                "we use the computers in the room",
+                "in the room we use the computers"
+            ], 
+            jp: "私たちはその部屋でコンピュータを使います。", lv: "Challenge" 
+        },
+        { 
+            tiles: ["many people", "protect", "the environment", "around the world"], 
+            validAnswers: [
+                "many people protect the environment around the world",
+                "around the world many people protect the environment",
+                "many people around the world protect the environment"
+            ], 
+            jp: "世界中の多くの人々が環境を保護しています。", lv: "Pre-2+" 
+        },
+        { 
+            tiles: ["the new library", "provides", "useful books", "for students"], 
+            validAnswers: [
+                "the new library provides useful books for students",
+                "for students the new library provides useful books"
+            ], 
+            jp: "その新しい図書館は生徒たちのために役立つ本を提供しています。", lv: "Pre-2+" 
+        },
+        { 
+            tiles: ["she", "achieved", "her goal", "with a lot of effort"], 
+            validAnswers: [
+                "she achieved her goal with a lot of effort",
+                "with a lot of effort she achieved her goal"
+            ], 
+            jp: "彼女は多大なる努力で目標を達成しました。", lv: "Pre-2+" 
+        },
+        { 
+            tiles: ["watching too many videos", "changes", "our way of thinking", "slowly"], 
+            validAnswers: [
+                "watching too many videos changes our way of thinking slowly",
+                "watching too many videos slowly changes our way of thinking"
+            ], 
+            jp: "動画をたくさん見ることは、私たちの考え方をゆっくり変えます。", lv: "Structure+" 
+        },
         { 
             tiles: ["technological advancements", "significantly", "improve", "our quality of life", "by providing", "new opportunities", "in various fields", "today"], 
             validAnswers: [
                 "technological advancements significantly improve our quality of life by providing new opportunities in various fields today",
                 "technological advancements improve our quality of life significantly by providing new opportunities in various fields today",
                 "today technological advancements significantly improve our quality of life by providing new opportunities in various fields",
-                "today technological advancements improve our quality of life significantly by providing new opportunities in various fields"
+                "today technological advancements improve our quality of life significantly by providing new opportunities in various fields",
+                "technological advancements significantly improve our quality of life today by providing new opportunities in various fields"
             ], 
             jp: "今日、技術の進歩は様々な分野で新しい機会を提供することによって、私たちの生活の質を著しく向上させています。", 
             lv: "Pre-1 Ultimate" 
